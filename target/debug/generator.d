@@ -1,1 +1,1 @@
-/home/alex/Repos/dev/Master/MasterThesis/MasterThesisPrototype/target/debug/generator: /home/alex/Repos/dev/Master/MasterThesis/MasterThesisPrototype/generator/src/main.rs
+/home/alex/Repos/Master/MasterThesisPrototype/target/debug/generator: /home/alex/Repos/Master/MasterThesisPrototype/generator/src/main.rs

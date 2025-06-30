@@ -295,6 +295,8 @@ type MemberMap = HashMap<String, String>;
 
 type UnionMap = HashMap<String, MemberMap>;
 type StructMap = HashMap<String, MemberMap>;
+type ParamMap = HashMap<String, String>;
+type VarMap = HashMap<String, String>;
 
 struct Attributes {
     union_id: usize,
@@ -307,6 +309,8 @@ struct Attributes {
     is_end_expression: bool,
     tab_level: usize,
     max_expr_depth: usize,
+    current_params: ParamMap,
+    current_vars: VarMap,
 }
 
 impl Attributes {
@@ -340,6 +344,8 @@ impl Default for Attributes {
             is_end_expression: false,
             tab_level: 0,
             max_expr_depth: 5,
+            current_params: ParamMap::new(),
+            current_vars: VarMap::new(),
         }
     }
 }
@@ -368,6 +374,8 @@ fn toplevel(attributes: &mut Attributes) -> TreeNode {
 }
 
 fn function(attributes: &mut Attributes) -> TreeNode {
+    attributes.current_params = ParamMap::new();
+    attributes.current_vars = VarMap::new();
     let mut children: Vec<TreeNode> = vec![];
     let return_value = type_whitelisted(
         attributes,
@@ -420,6 +428,9 @@ static EXPRESSIONS: LazyLock<Vec<(Acceptor, Expression, f64)>> = LazyLock::new(|
         (sub_expression_guard, sub_expression, 2f64),
         (mul_expression_guard, mul_expression, 2f64),
         (literal_float_guard, literal_float, 1f64),
+        (bracket_expression_guard, bracket_expression, 1f64),
+        (prefix_expression_guard, prefix_expression, 1f64),
+        (var_call_expression_guard, var_call_expression, 1f64),
     ]
 });
 
@@ -450,7 +461,7 @@ fn literal_int_guard(attributes: &Attributes) -> bool {
 fn literal_int(attributes: &mut Attributes) -> TreeNode {
     let mut rng = rand::rng();
     let mut value = rng.random::<i16>();
-    while value == 0 {
+    while value <= 0 {
         value = rng.random::<i16>();
     }
     let tabs = if attributes.is_start_expression {
@@ -576,6 +587,122 @@ fn mul_expression(attributes: &mut Attributes) -> TreeNode {
     })
 }
 
+fn bracket_expression_guard(attributes: &Attributes) -> bool {
+    let return_type = attributes.type_context.last().unwrap();
+    return_type == "Int" || return_type == "Float" || return_type == "Bool"
+}
+
+fn bracket_expression(attributes: &mut Attributes) -> TreeNode {
+    let tabs = if attributes.is_start_expression {
+        attributes.tab_level
+    } else {
+        0
+    };
+    let new_lines = if attributes.is_end_expression { 1 } else { 0 };
+    let mut children = vec![Node::Leaf(LeafNode {
+        tabs: tabs,
+        token: "(".to_string(),
+        new_lines: 0,
+    })];
+    attributes.is_start_expression = false;
+    attributes.is_end_expression = false;
+    children.push(expression(attributes));
+    children.push(Node::Leaf(LeafNode {
+        tabs: 0,
+        token: ")".to_string(),
+        new_lines: new_lines,
+    }));
+
+    Node::Inner(InnerNode {
+        tab_level: attributes.tab_level,
+        children: children,
+    })
+}
+
+fn prefix_expression_guard(attributes: &Attributes) -> bool {
+    let return_type = attributes.type_context.last().unwrap();
+    return_type == "Int" || return_type == "Float" || return_type == "Bool"
+}
+
+fn prefix_expression(attributes: &mut Attributes) -> TreeNode {
+    let mut children = vec![prefix(attributes)];
+    attributes.is_start_expression = false;
+    children.push(expression(attributes));
+    Node::Inner(InnerNode {
+        tab_level: attributes.tab_level,
+        children: children,
+    })
+}
+
+fn prefix(attributes: &Attributes) -> TreeNode {
+    let tabs = if attributes.is_start_expression {
+        attributes.tab_level
+    } else {
+        0
+    };
+    let prefix_symbol = match attributes.type_context.last().unwrap().as_str() {
+        "Int" | "Float" => "-".to_string(),
+        "Bool" => "!".to_string(),
+        _ => panic!("Invalid type for prefix expression"),
+    };
+    Node::Leaf(LeafNode {
+        tabs: tabs,
+        token: prefix_symbol,
+        new_lines: 0,
+    })
+}
+
+fn var_call_expression_guard(attributes: &Attributes) -> bool {
+    let return_type = attributes.type_context.last().unwrap();
+    let mut callable = attributes
+        .current_params
+        .iter()
+        .fold(false, |callabe_acc, (_, v)| callabe_acc || v == return_type);
+    callable = attributes
+        .current_vars
+        .iter()
+        .fold(callable, |callable_acc, (_, v)| {
+            callable_acc || v == return_type
+        });
+    callable
+}
+
+fn var_call_expression(attributes: &mut Attributes) -> TreeNode {
+    let return_type = attributes.type_context.last().unwrap();
+    let mut rng = rand::rng();
+    let mut possible_vars =
+        attributes
+            .current_params
+            .iter()
+            .fold(vec![], |mut possible, (k, v)| {
+                if v == return_type {
+                    possible.push(k);
+                }
+                possible
+            });
+    possible_vars = attributes
+        .current_vars
+        .iter()
+        .fold(possible_vars, |mut possible, (k, v)| {
+            if v == return_type {
+                possible.push(k);
+            }
+            possible
+        });
+    let var = possible_vars.choose(&mut rng).unwrap().clone().clone();
+    let tabs = if attributes.is_start_expression {
+        attributes.tab_level
+    } else {
+        0
+    };
+    let new_lines = if attributes.is_end_expression { 1 } else { 0 };
+    Node::Leaf(LeafNode {
+        tabs: tabs,
+        token: var,
+        new_lines: new_lines,
+    })
+}
+
 fn function_type_specification(attributes: &mut Attributes) -> TreeNode {
     let mut children: Vec<TreeNode> = vec![];
     let mut rng = rand::rng();
@@ -615,9 +742,14 @@ fn function_type_specification(attributes: &mut Attributes) -> TreeNode {
 
 fn function_arg(attributes: &mut Attributes, param_id: usize) -> TreeNode {
     let mut children: Vec<TreeNode> = vec![];
+    let param_name = format!("param{}", param_id);
+    let param_type = type_blacklisted(attributes, vec!["Nothing".to_string()], 0, 0);
+    attributes
+        .current_params
+        .insert(param_name.clone(), param_type.token.clone());
     children.push(Node::Leaf(LeafNode {
         tabs: 0,
-        token: format!("param{}", param_id),
+        token: param_name,
         new_lines: 0,
     }));
 
@@ -626,12 +758,7 @@ fn function_arg(attributes: &mut Attributes, param_id: usize) -> TreeNode {
         token: ": ".to_string(),
         new_lines: 0,
     }));
-    children.push(Node::Leaf(type_blacklisted(
-        attributes,
-        vec!["Nothing".to_string()],
-        0,
-        0,
-    )));
+    children.push(Node::Leaf(param_type));
     Node::Inner(InnerNode {
         tab_level: 0,
         children: children,
