@@ -311,6 +311,10 @@ struct Attributes {
     max_expr_depth: usize,
     current_params: ParamMap,
     current_vars: VarMap,
+    current_var_id: usize,
+    let_expr_allowed: bool,
+    is_main_func: bool,
+    main_func_generated: bool,
 }
 
 impl Attributes {
@@ -346,6 +350,10 @@ impl Default for Attributes {
             max_expr_depth: 5,
             current_params: ParamMap::new(),
             current_vars: VarMap::new(),
+            current_var_id: 0,
+            let_expr_allowed: true,
+            is_main_func: false,
+            main_func_generated: false,
         }
     }
 }
@@ -376,6 +384,7 @@ fn toplevel(attributes: &mut Attributes) -> TreeNode {
 fn function(attributes: &mut Attributes) -> TreeNode {
     attributes.current_params = ParamMap::new();
     attributes.current_vars = VarMap::new();
+    attributes.current_var_id = 0;
     let mut children: Vec<TreeNode> = vec![];
     let return_value = type_whitelisted(
         attributes,
@@ -424,13 +433,15 @@ type Expression = fn(&mut Attributes) -> TreeNode;
 static EXPRESSIONS: LazyLock<Vec<(Acceptor, Expression, f64)>> = LazyLock::new(|| {
     vec![
         (literal_int_guard, literal_int, 1f64),
-        (add_expression_guard, add_expression, 2f64),
-        (sub_expression_guard, sub_expression, 2f64),
-        (mul_expression_guard, mul_expression, 2f64),
+        // (add_expression_guard, add_expression, 2f64),
+        // (sub_expression_guard, sub_expression, 2f64),
+        // (mul_expression_guard, mul_expression, 2f64),
+        (infix_expression_guard, infix_expression, 2f64),
         (literal_float_guard, literal_float, 1f64),
         (bracket_expression_guard, bracket_expression, 1f64),
         (prefix_expression_guard, prefix_expression, 1f64),
         (var_call_expression_guard, var_call_expression, 1f64),
+        (let_expression_quard, let_expression, 2f64),
     ]
 });
 
@@ -446,7 +457,7 @@ fn expression(attributes: &mut Attributes) -> TreeNode {
 
 fn choose_expression(expressions: &Vec<(Expression, f64)>) -> Expression {
     let (expr, weights): (Vec<Expression>, Vec<f64>) = expressions.clone().into_iter().unzip();
-    let weight_sum: f64 = weights.iter().sum();
+    // let weight_sum: f64 = weights.iter().sum();
     let weights_normalized: Vec<f64> = weights.iter().map(|w| (1f64 / w)).collect();
     let dist = WeightedIndex::new(weights_normalized).ok().unwrap();
     let mut rng = rand::rng();
@@ -500,28 +511,29 @@ fn literal_float(attributes: &mut Attributes) -> TreeNode {
     })
 }
 
-fn add_expression_guard(attributes: &Attributes) -> bool {
+fn infix_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
-    attributes.max_expr_depth > 0 && (return_type == "Int" || return_type == "Float")
+    let depth = attributes.max_expr_depth;
+    depth > 0 && (return_type == "Int" || return_type == "Float" || return_type == "Bool")
 }
 
-fn add_expression(attributes: &mut Attributes) -> TreeNode {
+fn infix_expression(attributes: &mut Attributes) -> TreeNode {
     let mut children: Vec<TreeNode> = vec![];
     let is_end_expression_save = attributes.is_end_expression;
     attributes.max_expr_depth -= 1;
     attributes.is_end_expression = false;
+    let let_save = attributes.let_expr_allowed;
+    attributes.let_expr_allowed = false;
     children.push(expression(attributes));
     attributes.max_expr_depth += 1;
-    children.push(Node::Leaf(LeafNode {
-        tabs: 0,
-        token: " + ".to_string(),
-        new_lines: 0,
-    }));
+    children.push(infix_operator(attributes));
     attributes.is_start_expression = false;
     attributes.is_end_expression = is_end_expression_save;
     attributes.max_expr_depth -= 1;
     children.push(expression(attributes));
     attributes.max_expr_depth += 1;
+
+    attributes.let_expr_allowed = let_save;
 
     Node::Inner(InnerNode {
         tab_level: attributes.tab_level,
@@ -529,61 +541,20 @@ fn add_expression(attributes: &mut Attributes) -> TreeNode {
     })
 }
 
-fn sub_expression_guard(attributes: &Attributes) -> bool {
+fn infix_operator(attributes: &Attributes) -> TreeNode {
     let return_type = attributes.type_context.last().unwrap();
-    attributes.max_expr_depth > 0 && (return_type == "Int" || return_type == "Float")
-}
-
-fn sub_expression(attributes: &mut Attributes) -> TreeNode {
-    let mut children: Vec<TreeNode> = vec![];
-    let is_end_expression_save = attributes.is_end_expression;
-    attributes.is_end_expression = false;
-    attributes.max_expr_depth -= 1;
-    children.push(expression(attributes));
-    attributes.max_expr_depth += 1;
-    children.push(Node::Leaf(LeafNode {
+    let mut rng = rand::rng();
+    let operators: Vec<&str> = match return_type.as_str() {
+        "Int" => vec!["+", "-", "/", "*", "^", "%"], // "==", "!=", "<", "<=", ">", ">=", "%",
+        "Float" => vec!["+", "-", "/", "*"],         // "^", "==", "!=", "<", "<=", ">", ">="],
+        "Bool" => vec!["and", "or", "xor", "nand"],
+        _ => panic!("invalid type for infix operator"),
+    };
+    let operator = format!(" {} ", operators.choose(&mut rng).unwrap());
+    Node::Leaf(LeafNode {
         tabs: 0,
-        token: " - ".to_string(),
+        token: operator,
         new_lines: 0,
-    }));
-    attributes.is_start_expression = false;
-    attributes.is_end_expression = is_end_expression_save;
-    attributes.max_expr_depth -= 1;
-    children.push(expression(attributes));
-    attributes.max_expr_depth += 1;
-
-    Node::Inner(InnerNode {
-        tab_level: attributes.tab_level,
-        children: children,
-    })
-}
-
-fn mul_expression_guard(attributes: &Attributes) -> bool {
-    let return_type = attributes.type_context.last().unwrap();
-    attributes.max_expr_depth > 0 && (return_type == "Int" || return_type == "Float")
-}
-
-fn mul_expression(attributes: &mut Attributes) -> TreeNode {
-    let mut children: Vec<TreeNode> = vec![];
-    let is_end_expression_save = attributes.is_end_expression;
-    attributes.is_end_expression = false;
-    attributes.max_expr_depth -= 1;
-    children.push(expression(attributes));
-    attributes.max_expr_depth += 1;
-    children.push(Node::Leaf(LeafNode {
-        tabs: 0,
-        token: " * ".to_string(),
-        new_lines: 0,
-    }));
-    attributes.is_start_expression = false;
-    attributes.is_end_expression = is_end_expression_save;
-    attributes.max_expr_depth -= 1;
-    children.push(expression(attributes));
-    attributes.max_expr_depth += 1;
-
-    Node::Inner(InnerNode {
-        tab_level: attributes.tab_level,
-        children: children,
     })
 }
 
@@ -606,12 +577,15 @@ fn bracket_expression(attributes: &mut Attributes) -> TreeNode {
     })];
     attributes.is_start_expression = false;
     attributes.is_end_expression = false;
+    let let_save = attributes.let_expr_allowed;
+    attributes.let_expr_allowed = false;
     children.push(expression(attributes));
     children.push(Node::Leaf(LeafNode {
         tabs: 0,
         token: ")".to_string(),
         new_lines: new_lines,
     }));
+    attributes.let_expr_allowed = let_save;
 
     Node::Inner(InnerNode {
         tab_level: attributes.tab_level,
@@ -627,7 +601,10 @@ fn prefix_expression_guard(attributes: &Attributes) -> bool {
 fn prefix_expression(attributes: &mut Attributes) -> TreeNode {
     let mut children = vec![prefix(attributes)];
     attributes.is_start_expression = false;
+    let let_save = attributes.let_expr_allowed;
+    attributes.let_expr_allowed = false;
     children.push(expression(attributes));
+    attributes.let_expr_allowed = let_save;
     Node::Inner(InnerNode {
         tab_level: attributes.tab_level,
         children: children,
@@ -689,7 +666,7 @@ fn var_call_expression(attributes: &mut Attributes) -> TreeNode {
             }
             possible
         });
-    let var = possible_vars.choose(&mut rng).unwrap().clone().clone();
+    let var = possible_vars.choose(&mut rng).unwrap().to_string();
     let tabs = if attributes.is_start_expression {
         attributes.tab_level
     } else {
@@ -700,6 +677,52 @@ fn var_call_expression(attributes: &mut Attributes) -> TreeNode {
         tabs: tabs,
         token: var,
         new_lines: new_lines,
+    })
+}
+
+fn let_expression_quard(attributes: &Attributes) -> bool {
+    attributes.let_expr_allowed
+}
+
+fn let_expression(attributes: &mut Attributes) -> TreeNode {
+    let mut children = vec![Node::Leaf(LeafNode {
+        tabs: attributes.tab_level,
+        token: "let ".to_string(),
+        new_lines: 0,
+    })];
+    let var_type = type_whitelisted(
+        attributes,
+        vec!["Int".to_string(), "Float".to_string(), "Bool".to_string()],
+        0,
+        0,
+    )
+    .token;
+    let var_name = format!("var{}", attributes.current_var_id);
+    attributes.current_var_id += 1;
+    attributes.type_context.push(var_type.clone());
+    children.push(Node::Leaf(LeafNode {
+        tabs: 0,
+        token: var_name.clone(),
+        new_lines: 0,
+    }));
+    children.push(Node::Leaf(LeafNode {
+        tabs: 0,
+        token: " = ".to_string(),
+        new_lines: 0,
+    }));
+    attributes.is_start_expression = false;
+    attributes.is_end_expression = true;
+    attributes.let_expr_allowed = false;
+    children.push(expression(attributes));
+
+    attributes.current_vars.insert(var_name.clone(), var_type);
+    attributes.is_start_expression = true;
+    attributes.is_end_expression = true;
+    attributes.let_expr_allowed = true;
+    children.push(expression(attributes));
+    Node::Inner(InnerNode {
+        tab_level: attributes.tab_level,
+        children: children,
     })
 }
 
