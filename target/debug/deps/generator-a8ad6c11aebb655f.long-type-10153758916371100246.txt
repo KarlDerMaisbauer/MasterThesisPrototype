@@ -1,0 +1,1 @@
+for<'a> fn(&'a mut Attributes) -> Node<InnerNode, LeafNode> {grammar::expression::struct_constructor_expression::struct_constructor_expression}
