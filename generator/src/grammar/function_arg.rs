@@ -21,8 +21,5 @@ pub fn function_arg(attributes: &mut Attributes, param_id: usize) -> AstNode {
         new_lines: 0,
     }));
     children.push(Node::Leaf(param_type));
-    Node::Inner(InnerNode {
-        // tab_level: 0,
-        children: children,
-    })
+    Node::Inner(InnerNode { children: children })
 }
