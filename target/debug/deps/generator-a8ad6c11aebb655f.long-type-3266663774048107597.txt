@@ -1,1 +1,0 @@
-for<'a> fn(&'a mut Attributes) -> Node<NonTerminalInfo, nodes::TerminalInfo> {grammar::expression::function_call_expression::function_call_expression}
