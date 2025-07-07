@@ -1,5 +1,5 @@
 use crate::grammar::attributes::Attributes;
-use crate::grammar::nodes::LeafNode;
+use crate::grammar::nodes::TerminalInfo;
 use rand::prelude::*;
 
 pub fn type_whitelisted(
@@ -7,7 +7,7 @@ pub fn type_whitelisted(
     whitelist: Vec<String>,
     tabs: usize,
     new_lines: usize,
-) -> LeafNode {
+) -> TerminalInfo {
     let mut rng = rand::rng();
     let mut types = vec![
         "Int".to_string(),
@@ -23,7 +23,7 @@ pub fn type_whitelisted(
         .into_iter()
         .filter(|type_id| whitelist.contains(type_id))
         .collect();
-    LeafNode {
+    TerminalInfo {
         tabs: tabs,
         token: types.choose(&mut rng).unwrap().clone(),
         new_lines: new_lines,

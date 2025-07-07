@@ -1,16 +1,15 @@
-pub type AstNode = Node<InnerNode, LeafNode>;
+pub type AstNode = Node<NonTerminalInfo, TerminalInfo>;
 
 pub enum Node<I: ToString, L: ToString> {
-    Inner(I),
-    Leaf(L),
+    NonTerminal(I),
+    Terminal(L),
 }
 
-pub struct InnerNode {
-    // tab_level: usize,
+pub struct NonTerminalInfo {
     pub children: Vec<AstNode>,
 }
 
-impl ToString for InnerNode {
+impl ToString for NonTerminalInfo {
     fn to_string(&self) -> String {
         let mut string = "".to_string();
         for node in &self.children {
@@ -20,13 +19,14 @@ impl ToString for InnerNode {
     }
 }
 
-pub struct LeafNode {
+#[derive(Clone)]
+pub struct TerminalInfo {
     pub tabs: usize,
     pub token: String,
     pub new_lines: usize,
 }
 
-impl ToString for LeafNode {
+impl ToString for TerminalInfo {
     fn to_string(&self) -> String {
         // self.token.clone()
         format!(
@@ -41,8 +41,8 @@ impl ToString for LeafNode {
 impl<I: ToString, L: ToString> Node<I, L> {
     pub fn to_string(&self) -> String {
         match self {
-            Node::Inner(info) => info.to_string(),
-            Node::Leaf(info) => info.to_string(),
+            Node::NonTerminal(info) => info.to_string(),
+            Node::Terminal(info) => info.to_string(),
         }
     }
 

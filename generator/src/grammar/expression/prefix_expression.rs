@@ -1,9 +1,9 @@
 use super::expression::expression;
 use crate::grammar::attributes::Attributes;
 use crate::grammar::nodes::AstNode;
-use crate::grammar::nodes::InnerNode;
-use crate::grammar::nodes::LeafNode;
 use crate::grammar::nodes::Node;
+use crate::grammar::nodes::NonTerminalInfo;
+use crate::grammar::nodes::TerminalInfo;
 
 pub fn prefix_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
@@ -17,10 +17,7 @@ pub fn prefix_expression(attributes: &mut Attributes) -> AstNode {
     attributes.let_expr_allowed = false;
     children.push(expression(attributes));
     attributes.let_expr_allowed = let_save;
-    Node::Inner(InnerNode {
-        // tab_level: attributes.tab_level,
-        children: children,
-    })
+    Node::NonTerminal(NonTerminalInfo { children: children })
 }
 
 fn prefix(attributes: &Attributes) -> AstNode {
@@ -31,10 +28,10 @@ fn prefix(attributes: &Attributes) -> AstNode {
     };
     let prefix_symbol = match attributes.type_context.last().unwrap().as_str() {
         "Int" | "Float" => "-".to_string(),
-        "Bool" => "!".to_string(),
+        "Bool" => "not ".to_string(),
         _ => panic!("Invalid type for prefix expression"),
     };
-    Node::Leaf(LeafNode {
+    Node::Terminal(TerminalInfo {
         tabs: tabs,
         token: prefix_symbol,
         new_lines: 0,

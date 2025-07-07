@@ -1,8 +1,8 @@
 use crate::grammar::attributes::Attributes;
-use crate::grammar::nodes::LeafNode;
+use crate::grammar::nodes::TerminalInfo;
 use rand::prelude::*;
 
-pub fn r#type(attributes: &mut Attributes, tabs: usize, new_lines: usize) -> LeafNode {
+pub fn r#type(attributes: &mut Attributes, tabs: usize, new_lines: usize) -> TerminalInfo {
     let mut rng = rand::rng();
     let mut types = vec![
         "Int".to_string(),
@@ -13,7 +13,7 @@ pub fn r#type(attributes: &mut Attributes, tabs: usize, new_lines: usize) -> Lea
 
     types.append(&mut attributes.get_union_types());
     types.append(&mut attributes.get_struct_types());
-    LeafNode {
+    TerminalInfo {
         tabs: tabs,
         token: types.choose(&mut rng).unwrap().clone(),
         new_lines: new_lines,

@@ -1,6 +1,6 @@
 use crate::grammar::attributes::Attributes;
 use crate::grammar::attributes::MemberMap;
-use crate::grammar::nodes::{AstNode, LeafNode, Node};
+use crate::grammar::nodes::{AstNode, Node, TerminalInfo};
 use crate::grammar::r#type::r#type::r#type;
 use rand::Rng;
 
@@ -30,18 +30,18 @@ fn union_members_inner(
     members.insert(member_name.clone(), member_type.token.clone());
 
     vec![
-        Node::Leaf(LeafNode {
+        Node::Terminal(TerminalInfo {
             tabs: 1,
             token: member_name,
             new_lines: 0,
         }),
-        Node::Leaf(LeafNode {
+        Node::Terminal(TerminalInfo {
             tabs: 0,
             token: "(".to_string(),
             new_lines: 0,
         }),
-        Node::Leaf(member_type),
-        Node::Leaf(LeafNode {
+        Node::Terminal(member_type),
+        Node::Terminal(TerminalInfo {
             tabs: 0,
             token: ")".to_string(),
             new_lines: 1,

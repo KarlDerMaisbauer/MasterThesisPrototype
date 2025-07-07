@@ -1,9 +1,9 @@
 use super::expression::expression;
 use crate::grammar::attributes::Attributes;
 use crate::grammar::nodes::AstNode;
-use crate::grammar::nodes::InnerNode;
-use crate::grammar::nodes::LeafNode;
 use crate::grammar::nodes::Node;
+use crate::grammar::nodes::NonTerminalInfo;
+use crate::grammar::nodes::TerminalInfo;
 use rand::prelude::*;
 
 pub fn union_constructor_expression_guard(attributes: &Attributes) -> bool {
@@ -21,15 +21,18 @@ pub fn union_constructor_expression(attributes: &mut Attributes) -> AstNode {
     } else {
         0
     };
+    let new_lines = if attributes.is_end_expression { 1 } else { 0 };
     attributes.is_start_expression = false;
+    attributes.is_end_expression = false;
+    attributes.let_expr_allowed = false;
     let mut children: Vec<AstNode> = vec![
-        Node::Leaf(LeafNode {
+        Node::Terminal(TerminalInfo {
             tabs: tabs,
             token: union_type.clone(),
             new_lines: 0,
         }),
-        Node::Leaf(LeafNode {
-            tabs: tabs,
+        Node::Terminal(TerminalInfo {
+            tabs: 0,
             token: "::".to_string(),
             new_lines: 0,
         }),
@@ -42,13 +45,13 @@ pub fn union_constructor_expression(attributes: &mut Attributes) -> AstNode {
         .iter()
         .choose(&mut rand::rng())
         .unwrap();
-    children.push(Node::Leaf(LeafNode {
+    children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
         token: member_name.clone(),
         new_lines: 0,
     }));
 
-    children.push(Node::Leaf(LeafNode {
+    children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
         token: "(".to_string(),
         new_lines: 0,
@@ -77,11 +80,10 @@ pub fn union_constructor_expression(attributes: &mut Attributes) -> AstNode {
     //     }
     //     attributes.is_end_expression = is_end_save;
     // }
-    let new_lines = if attributes.is_end_expression { 1 } else { 0 };
-    children.push(Node::Leaf(LeafNode {
+    children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
         token: ")".to_string(),
         new_lines: new_lines,
     }));
-    Node::Inner(InnerNode { children })
+    Node::NonTerminal(NonTerminalInfo { children })
 }

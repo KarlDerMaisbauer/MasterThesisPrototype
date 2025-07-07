@@ -1,7 +1,7 @@
 use crate::grammar::attributes::Attributes;
 use crate::grammar::nodes::AstNode;
-use crate::grammar::nodes::LeafNode;
 use crate::grammar::nodes::Node;
+use crate::grammar::nodes::TerminalInfo;
 use rand::prelude::*;
 
 pub fn var_call_expression_guard(attributes: &Attributes) -> bool {
@@ -48,7 +48,7 @@ pub fn var_call_expression(attributes: &mut Attributes) -> AstNode {
         0
     };
     let new_lines = if attributes.is_end_expression { 1 } else { 0 };
-    Node::Leaf(LeafNode {
+    Node::Terminal(TerminalInfo {
         tabs: tabs,
         token: var,
         new_lines: new_lines,

@@ -1,9 +1,9 @@
 use super::expression::expression;
 use crate::grammar::attributes::Attributes;
 use crate::grammar::nodes::AstNode;
-use crate::grammar::nodes::InnerNode;
-use crate::grammar::nodes::LeafNode;
 use crate::grammar::nodes::Node;
+use crate::grammar::nodes::NonTerminalInfo;
+use crate::grammar::nodes::TerminalInfo;
 use crate::grammar::r#type::type_whitelisted::type_whitelisted;
 
 pub fn let_expression_quard(attributes: &Attributes) -> bool {
@@ -11,7 +11,7 @@ pub fn let_expression_quard(attributes: &Attributes) -> bool {
 }
 
 pub fn let_expression(attributes: &mut Attributes) -> AstNode {
-    let mut children = vec![Node::Leaf(LeafNode {
+    let mut children = vec![Node::Terminal(TerminalInfo {
         tabs: attributes.tab_level,
         token: "let ".to_string(),
         new_lines: 0,
@@ -26,12 +26,12 @@ pub fn let_expression(attributes: &mut Attributes) -> AstNode {
     let var_name = format!("var{}", attributes.current_var_id);
     attributes.current_var_id += 1;
     attributes.type_context.push(var_type.clone());
-    children.push(Node::Leaf(LeafNode {
+    children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
         token: var_name.clone(),
         new_lines: 0,
     }));
-    children.push(Node::Leaf(LeafNode {
+    children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
         token: " = ".to_string(),
         new_lines: 0,
@@ -47,7 +47,7 @@ pub fn let_expression(attributes: &mut Attributes) -> AstNode {
     attributes.is_end_expression = true;
     attributes.let_expr_allowed = true;
     children.push(expression(attributes));
-    Node::Inner(InnerNode {
+    Node::NonTerminal(NonTerminalInfo {
         // tab_level: attributes.tab_level,
         children: children,
     })

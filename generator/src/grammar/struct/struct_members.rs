@@ -1,5 +1,5 @@
 use crate::grammar::attributes::{Attributes, MemberMap};
-use crate::grammar::nodes::{AstNode, LeafNode, Node};
+use crate::grammar::nodes::{AstNode, Node, TerminalInfo};
 use crate::grammar::r#type::type_blacklisted::type_blacklisted;
 use rand::Rng;
 
@@ -29,18 +29,18 @@ fn struct_members_inner(
     let member_type = type_blacklisted(attributes, vec!["Nothing".to_string()], 0, 0);
     members.insert(member_name.clone(), member_type.token.clone());
     vec![
-        Node::Leaf(LeafNode {
+        Node::Terminal(TerminalInfo {
             tabs: 1,
             token: member_name,
             new_lines: 0,
         }),
-        Node::Leaf(LeafNode {
+        Node::Terminal(TerminalInfo {
             tabs: 0,
             token: ": ".to_string(),
             new_lines: 0,
         }),
-        Node::Leaf(member_type),
-        Node::Leaf(LeafNode {
+        Node::Terminal(member_type),
+        Node::Terminal(TerminalInfo {
             tabs: 0,
             token: "".to_string(),
             new_lines: 1,

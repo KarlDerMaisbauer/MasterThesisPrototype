@@ -1,5 +1,5 @@
 use crate::grammar::attributes::Attributes;
-use crate::grammar::nodes::{AstNode, LeafNode, Node};
+use crate::grammar::nodes::{AstNode, Node, TerminalInfo};
 use rand::Rng;
 
 pub fn literal_float_guard(attributes: &Attributes) -> bool {
@@ -18,7 +18,7 @@ pub fn literal_float(attributes: &mut Attributes) -> AstNode {
         0
     };
     let new_lines = if attributes.is_end_expression { 1 } else { 0 };
-    Node::Leaf(LeafNode {
+    Node::Terminal(TerminalInfo {
         tabs: tabs,
         token: value.to_string(),
         new_lines: new_lines,

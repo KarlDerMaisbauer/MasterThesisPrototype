@@ -4,9 +4,9 @@ use crate::grammar::expression::expression;
 use crate::grammar::function::expression::expression;
 use crate::grammar::function_type_specification::function_type_specification;
 use crate::grammar::nodes::AstNode;
-use crate::grammar::nodes::InnerNode;
-use crate::grammar::nodes::LeafNode;
 use crate::grammar::nodes::Node;
+use crate::grammar::nodes::NonTerminalInfo;
+use crate::grammar::nodes::TerminalInfo;
 use crate::grammar::r#type::type_blacklisted::type_blacklisted;
 use crate::grammar::r#type::type_whitelisted::type_whitelisted;
 use rand::distr::Bernoulli;
@@ -25,7 +25,7 @@ pub fn function(attributes: &mut Attributes) -> AstNode {
         type_blacklisted(attributes, vec!["Nothing".to_string()], 0, 1)
     };
     attributes.type_context.push(return_value.token.clone());
-    children.push(Node::Leaf(LeafNode {
+    children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
         token: "fn ".to_string(),
         new_lines: 0,
@@ -37,13 +37,13 @@ pub fn function(attributes: &mut Attributes) -> AstNode {
         attributes.function_id += 1;
         format!("function{}", id)
     };
-    children.push(Node::Leaf(LeafNode {
+    children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
-        token: function_name,
+        token: function_name.clone(),
         new_lines: 0,
     }));
     children.push(function_type_specification(attributes));
-    children.push(Node::Leaf(return_value));
+    children.push(Node::Terminal(return_value.clone()));
     attributes.is_end_expression = true;
     attributes.is_start_expression = true;
     attributes.tab_level += 1;
@@ -52,7 +52,7 @@ pub fn function(attributes: &mut Attributes) -> AstNode {
     attributes.is_start_expression = false;
     attributes.is_end_expression = false;
 
-    children.push(Node::Leaf(LeafNode {
+    children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
         token: "end".to_string(),
         new_lines: 2,
@@ -60,8 +60,16 @@ pub fn function(attributes: &mut Attributes) -> AstNode {
     attributes.main_func_generated = attributes.main_func_generated || attributes.is_main_func;
     attributes.is_main_func = false;
     attributes.type_context.pop();
-    Node::Inner(InnerNode {
-        // tab_level: 0,
-        children: children,
-    })
+    if function_name != "main".to_string() {
+        let mut param_names: Vec<String> = attributes.current_params.keys().cloned().collect();
+        param_names.sort();
+        let params: Vec<(String, String)> = param_names
+            .iter()
+            .map(|p| (p.clone(), attributes.current_params.get(p).unwrap().clone()))
+            .collect();
+        attributes
+            .function_map
+            .insert(function_name, (params, return_value.token.clone()));
+    }
+    Node::NonTerminal(NonTerminalInfo { children: children })
 }

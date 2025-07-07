@@ -1,5 +1,5 @@
 use crate::grammar::attributes::Attributes;
-use crate::grammar::nodes::{AstNode, InnerNode, LeafNode, Node};
+use crate::grammar::nodes::{AstNode, Node, NonTerminalInfo, TerminalInfo};
 use crate::grammar::r#type::type_blacklisted::type_blacklisted;
 
 pub fn function_arg(attributes: &mut Attributes, param_id: usize) -> AstNode {
@@ -9,17 +9,17 @@ pub fn function_arg(attributes: &mut Attributes, param_id: usize) -> AstNode {
     attributes
         .current_params
         .insert(param_name.clone(), param_type.token.clone());
-    children.push(Node::Leaf(LeafNode {
+    children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
         token: param_name,
         new_lines: 0,
     }));
 
-    children.push(Node::Leaf(LeafNode {
+    children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
         token: ": ".to_string(),
         new_lines: 0,
     }));
-    children.push(Node::Leaf(param_type));
-    Node::Inner(InnerNode { children: children })
+    children.push(Node::Terminal(param_type));
+    Node::NonTerminal(NonTerminalInfo { children: children })
 }

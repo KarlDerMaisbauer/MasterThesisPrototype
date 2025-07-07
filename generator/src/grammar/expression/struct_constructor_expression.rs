@@ -1,9 +1,9 @@
 use super::expression::expression;
 use crate::grammar::attributes::Attributes;
 use crate::grammar::nodes::AstNode;
-use crate::grammar::nodes::InnerNode;
-use crate::grammar::nodes::LeafNode;
 use crate::grammar::nodes::Node;
+use crate::grammar::nodes::NonTerminalInfo;
+use crate::grammar::nodes::TerminalInfo;
 
 pub fn struct_constructor_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
@@ -15,20 +15,23 @@ pub fn struct_constructor_expression_guard(attributes: &Attributes) -> bool {
 
 pub fn struct_constructor_expression(attributes: &mut Attributes) -> AstNode {
     let struct_type = attributes.type_context.last().unwrap();
+    let new_lines = if attributes.is_end_expression { 1 } else { 0 };
     let tabs = if attributes.is_start_expression {
         attributes.tab_level
     } else {
         0
     };
     attributes.is_start_expression = false;
+    attributes.is_end_expression = false;
+    attributes.let_expr_allowed = false;
     let mut children: Vec<AstNode> = vec![
-        Node::Leaf(LeafNode {
+        Node::Terminal(TerminalInfo {
             tabs: tabs,
             token: struct_type.clone(),
             new_lines: 0,
         }),
-        Node::Leaf(LeafNode {
-            tabs: tabs,
+        Node::Terminal(TerminalInfo {
+            tabs: 0,
             token: "(".to_string(),
             new_lines: 0,
         }),
@@ -49,7 +52,7 @@ pub fn struct_constructor_expression(attributes: &mut Attributes) -> AstNode {
             children.push(expression(attributes));
             attributes.type_context.pop();
             if matches!(iter.peek(), Some(_)) {
-                children.push(Node::Leaf(LeafNode {
+                children.push(Node::Terminal(TerminalInfo {
                     tabs: 0,
                     token: ", ".to_string(),
                     new_lines: 0,
@@ -58,11 +61,10 @@ pub fn struct_constructor_expression(attributes: &mut Attributes) -> AstNode {
         }
         attributes.is_end_expression = is_end_save;
     }
-    let new_lines = if attributes.is_end_expression { 1 } else { 0 };
-    children.push(Node::Leaf(LeafNode {
+    children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
         token: ")".to_string(),
         new_lines: new_lines,
     }));
-    Node::Inner(InnerNode { children })
+    Node::NonTerminal(NonTerminalInfo { children })
 }

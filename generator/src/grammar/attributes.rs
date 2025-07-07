@@ -5,8 +5,9 @@ pub type UnionMap = HashMap<String, MemberMap>;
 pub type StructMap = HashMap<String, MemberMap>;
 pub type ParamMap = HashMap<String, String>;
 pub type VarMap = HashMap<String, String>;
-pub type FunctionMap = HashMap<String, (Vec<String>, String)>;
+pub type FunctionMap = HashMap<String, (Vec<(String, String)>, String)>;
 
+#[derive(Clone)]
 pub struct Attributes {
     pub union_id: usize,
     pub struct_id: usize,

@@ -1,9 +1,9 @@
 use super::expression::expression;
 use crate::grammar::attributes::Attributes;
 use crate::grammar::nodes::AstNode;
-use crate::grammar::nodes::InnerNode;
-use crate::grammar::nodes::LeafNode;
 use crate::grammar::nodes::Node;
+use crate::grammar::nodes::NonTerminalInfo;
+use crate::grammar::nodes::TerminalInfo;
 use rand::prelude::*;
 
 pub fn infix_expression_guard(attributes: &Attributes) -> bool {
@@ -30,7 +30,7 @@ pub fn infix_expression(attributes: &mut Attributes) -> AstNode {
 
     attributes.let_expr_allowed = let_save;
 
-    Node::Inner(InnerNode {
+    Node::NonTerminal(NonTerminalInfo {
         // tab_level: attributes.tab_level,
         children: children,
     })
@@ -46,7 +46,7 @@ fn infix_operator(attributes: &Attributes) -> AstNode {
         _ => panic!("invalid type for infix operator"),
     };
     let operator = format!(" {} ", operators.choose(&mut rng).unwrap());
-    Node::Leaf(LeafNode {
+    Node::Terminal(TerminalInfo {
         tabs: 0,
         token: operator,
         new_lines: 0,
