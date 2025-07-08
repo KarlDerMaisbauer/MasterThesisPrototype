@@ -7,7 +7,8 @@ use crate::grammar::nodes::TerminalInfo;
 
 pub fn bracket_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
-    return_type == "Int" || return_type == "Float" || return_type == "Bool"
+    let depth = attributes.max_expr_depth;
+    depth > 0 && (return_type == "Int" || return_type == "Float" || return_type == "Bool")
 }
 
 pub fn bracket_expression(attributes: &mut Attributes) -> AstNode {

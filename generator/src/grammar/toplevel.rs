@@ -7,7 +7,7 @@ use rand::Rng;
 
 pub fn toplevel(attributes: &mut Attributes) -> AstNode {
     let mut rng = rand::rng();
-    match rng.random::<u32>() % 3 {
+    match rng.random::<u32>() % 5 {
         0 => union(attributes),
         1 => r#struct(attributes),
         _ => function(attributes),

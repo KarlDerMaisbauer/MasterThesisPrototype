@@ -30,10 +30,7 @@ pub fn infix_expression(attributes: &mut Attributes) -> AstNode {
 
     attributes.let_expr_allowed = let_save;
 
-    Node::NonTerminal(NonTerminalInfo {
-        // tab_level: attributes.tab_level,
-        children: children,
-    })
+    Node::NonTerminal(NonTerminalInfo { children: children })
 }
 
 fn infix_operator(attributes: &Attributes) -> AstNode {

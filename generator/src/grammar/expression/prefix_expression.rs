@@ -7,7 +7,8 @@ use crate::grammar::nodes::TerminalInfo;
 
 pub fn prefix_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
-    return_type == "Int" || return_type == "Float" || return_type == "Bool"
+    let depth = attributes.max_expr_depth;
+    depth > 0 && (return_type == "Int" || return_type == "Float" || return_type == "Bool")
 }
 
 pub fn prefix_expression(attributes: &mut Attributes) -> AstNode {
@@ -15,7 +16,9 @@ pub fn prefix_expression(attributes: &mut Attributes) -> AstNode {
     attributes.is_start_expression = false;
     let let_save = attributes.let_expr_allowed;
     attributes.let_expr_allowed = false;
+    attributes.max_expr_depth -= 1;
     children.push(expression(attributes));
+    attributes.max_expr_depth += 1;
     attributes.let_expr_allowed = let_save;
     Node::NonTerminal(NonTerminalInfo { children: children })
 }

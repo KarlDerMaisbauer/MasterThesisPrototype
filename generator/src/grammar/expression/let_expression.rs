@@ -7,7 +7,7 @@ use crate::grammar::nodes::TerminalInfo;
 use crate::grammar::r#type::type_whitelisted::type_whitelisted;
 
 pub fn let_expression_quard(attributes: &Attributes) -> bool {
-    attributes.let_expr_allowed
+    attributes.let_expr_allowed && attributes.max_expr_depth > 0
 }
 
 pub fn let_expression(attributes: &mut Attributes) -> AstNode {
@@ -39,14 +39,18 @@ pub fn let_expression(attributes: &mut Attributes) -> AstNode {
     attributes.is_start_expression = false;
     attributes.is_end_expression = true;
     attributes.let_expr_allowed = false;
+    attributes.max_expr_depth -= 1;
     children.push(expression(attributes));
+    attributes.max_expr_depth += 1;
 
     attributes.current_vars.insert(var_name.clone(), var_type);
     attributes.type_context.pop();
     attributes.is_start_expression = true;
     attributes.is_end_expression = true;
     attributes.let_expr_allowed = true;
+    attributes.max_expr_depth -= 1;
     children.push(expression(attributes));
+    attributes.max_expr_depth += 1;
     Node::NonTerminal(NonTerminalInfo {
         // tab_level: attributes.tab_level,
         children: children,

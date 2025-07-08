@@ -3,6 +3,7 @@ mod expression;
 mod function;
 mod function_arg;
 mod function_type_specification;
+mod literal;
 mod nodes;
 pub mod program;
 mod r#struct;
