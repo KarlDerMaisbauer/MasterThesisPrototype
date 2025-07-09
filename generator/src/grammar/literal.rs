@@ -15,6 +15,7 @@ pub fn literal_guard(attributes: &Attributes) -> bool {
 pub fn literal(attributes: &mut Attributes) -> AstNode {
     let return_type = attributes.type_context.last().unwrap().as_str();
     let mut rng = rand::rng();
+    // let no_zero_value = attributes.no_zero_value
     let value = match return_type {
         "Int" => {
             let mut value_intermediate = rng.random::<i16>();

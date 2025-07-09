@@ -9,14 +9,16 @@ use rand::prelude::*;
 
 pub fn member_access_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
-    attributes
-        .struct_map
-        .iter()
-        .fold(false, |acc, (_k, members)| {
-            acc || members.iter().fold(false, |acc, (_name, member_type)| {
-                acc || member_type == return_type
+    let no_zero_value = attributes.no_zero_value;
+    !no_zero_value
+        && attributes
+            .struct_map
+            .iter()
+            .fold(false, |acc, (_k, members)| {
+                acc || members.iter().fold(false, |acc, (_name, member_type)| {
+                    acc || member_type == return_type
+                })
             })
-        })
 }
 
 pub fn member_access_expression(attributes: &mut Attributes) -> AstNode {

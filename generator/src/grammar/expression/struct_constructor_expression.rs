@@ -7,10 +7,12 @@ use crate::grammar::nodes::TerminalInfo;
 
 pub fn struct_constructor_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
-    attributes
-        .struct_map
-        .iter()
-        .fold(false, |acc, (k, _)| acc || (k == return_type))
+    let no_zero_value = attributes.no_zero_value;
+    !no_zero_value
+        && attributes
+            .struct_map
+            .iter()
+            .fold(false, |acc, (k, _)| acc || (k == return_type))
 }
 
 pub fn struct_constructor_expression(attributes: &mut Attributes) -> AstNode {
@@ -36,17 +38,17 @@ pub fn struct_constructor_expression(attributes: &mut Attributes) -> AstNode {
             new_lines: 0,
         }),
     ];
-    let members: Vec<String> = attributes
-        .struct_map
-        .get(struct_type)
-        .unwrap()
+    let member_map = attributes.struct_map.get(struct_type).unwrap();
+    let mut member_keys: Vec<String> = member_map.keys().map(|k| k.clone()).collect();
+    member_keys.sort();
+    let members: Vec<String> = member_keys
         .iter()
-        .map(|(_, member_type)| member_type.clone())
+        .map(|k| member_map.get(k).unwrap().clone())
         .collect();
     if members.len() > 0 {
         let is_end_save = attributes.is_end_expression;
         attributes.is_end_expression = false;
-        let mut iter = members.iter().rev().peekable();
+        let mut iter = members.iter().peekable();
         while let Some(member_type) = iter.next() {
             attributes.type_context.push(member_type.clone());
             children.push(expression(attributes));

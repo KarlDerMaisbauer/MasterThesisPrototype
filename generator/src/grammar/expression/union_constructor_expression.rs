@@ -8,10 +8,12 @@ use rand::prelude::*;
 
 pub fn union_constructor_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
-    attributes
-        .union_map
-        .iter()
-        .fold(false, |acc, (k, _)| acc || (k == return_type))
+    let no_zero_value = attributes.no_zero_value;
+    !no_zero_value
+        && attributes
+            .union_map
+            .iter()
+            .fold(false, |acc, (k, _)| acc || (k == return_type))
 }
 
 pub fn union_constructor_expression(attributes: &mut Attributes) -> AstNode {

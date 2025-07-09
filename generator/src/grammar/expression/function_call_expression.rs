@@ -9,10 +9,12 @@ use crate::grammar::nodes::TerminalInfo;
 
 pub fn function_call_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
-    attributes
-        .function_map
-        .iter()
-        .fold(false, |acc, (_k, (_params, ret))| acc || return_type == ret)
+    let no_zero_value = attributes.no_zero_value;
+    !no_zero_value
+        && attributes
+            .function_map
+            .iter()
+            .fold(false, |acc, (_k, (_params, ret))| acc || return_type == ret)
 }
 
 pub fn function_call_expression(attributes: &mut Attributes) -> AstNode {
