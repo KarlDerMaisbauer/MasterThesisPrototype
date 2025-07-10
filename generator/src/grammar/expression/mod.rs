@@ -3,6 +3,7 @@ pub mod expression;
 mod function_call_expression;
 mod infix_expression;
 mod let_expression;
+mod match_expression;
 mod member_access_expression;
 mod prefix_expression;
 mod struct_constructor_expression;
@@ -14,6 +15,7 @@ use crate::grammar::expression::bracket_expression::*;
 use crate::grammar::expression::function_call_expression::*;
 use crate::grammar::expression::infix_expression::*;
 use crate::grammar::expression::let_expression::*;
+use crate::grammar::expression::match_expression::*;
 use crate::grammar::expression::member_access_expression::*;
 use crate::grammar::expression::prefix_expression::*;
 use crate::grammar::expression::struct_constructor_expression::*;
@@ -54,5 +56,6 @@ static EXPRESSIONS: LazyLock<Vec<(Acceptor, Expression, f64)>> = LazyLock::new(|
             member_access_expression,
             1f64,
         ),
+        (match_expression_guard, match_expression, 1f64),
     ]
 });
