@@ -28,6 +28,7 @@ pub struct Attributes {
     pub main_func_generated: bool,
     pub no_zero_value: bool,
     pub match_expr_valid: bool,
+    pub match_arm_expr: bool,
 }
 
 impl Attributes {
@@ -70,6 +71,7 @@ impl Default for Attributes {
             main_func_generated: false,
             no_zero_value: false,
             match_expr_valid: true,
+            match_arm_expr: false,
         }
     }
 }

@@ -10,7 +10,9 @@ use rand::prelude::*;
 pub fn member_access_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
     let no_zero_value = attributes.no_zero_value;
+    let matcher = attributes.match_arm_expr;
     !no_zero_value
+        && !matcher
         && attributes
             .struct_map
             .iter()
@@ -62,7 +64,9 @@ pub fn member_access_expression(attributes: &mut Attributes) -> AstNode {
     let end_expr_save = attributes.is_end_expression;
     attributes.let_expr_allowed = false;
     attributes.is_end_expression = false;
+    attributes.match_expr_valid = false;
     children.push(expression(attributes));
+    attributes.match_expr_valid = true;
     attributes.type_context.pop();
     children.push(Node::Terminal(TerminalInfo {
         tabs: 0,

@@ -1,37 +1,45 @@
 use super::expression::expression;
 use crate::grammar::attributes::Attributes;
-use crate::grammar::literal::literal;
 use crate::grammar::nodes::AstNode;
 use crate::grammar::nodes::Node;
 use crate::grammar::nodes::NonTerminalInfo;
 use crate::grammar::nodes::TerminalInfo;
+use crate::grammar::utils::gen_type::gen_type::gen_type;
 use crate::grammar::utils::gen_type::gen_type_whitelisted::gen_type_whitelisted;
 
 pub fn match_expression_guard(attributes: &Attributes) -> bool {
     let depth = attributes.max_expr_depth;
-    depth > 0 && attributes.match_expr_valid
+    let matcher = attributes.match_arm_expr;
+    !matcher && depth > 0 && attributes.match_expr_valid
 }
 
 pub fn match_expression(attributes: &mut Attributes) -> AstNode {
-    let tabs = if attributes.is_start_expression {
+    let tabs_start = if attributes.is_start_expression {
         attributes.tab_level
     } else {
         0
     };
-    // let new_lines = if attributes.is_end_expression { 1 } else { 0 };
+
+    let tabs_end = attributes.tab_level;
+
     attributes.match_expr_valid = false;
     attributes.let_expr_allowed = false;
-    let destructuring_type = gen_type_whitelisted(attributes, vec!["Int".to_string()]);
+    // let destructuring_type = gen_type_whitelisted(attributes, vec!["Int".to_string()]);
+    let destructuring_type = gen_type(attributes);
     let mut children = vec![Node::Terminal(TerminalInfo {
-        tabs: tabs,
+        tabs: tabs_start,
         token: "match ".to_string(),
         new_lines: 0,
     })];
     attributes.is_start_expression = false;
     attributes.is_end_expression = true;
+    attributes.type_context.push(destructuring_type.clone());
+    attributes.match_expr_valid = false;
     children.push(expression(attributes));
+    attributes.match_expr_valid = true;
+    attributes.type_context.pop();
     attributes.tab_level += 1;
-    // match arms#
+    // match arms
     attributes.max_expr_depth -= 1;
     let mut num_match_arms = 5;
     while num_match_arms > 0 {
@@ -42,7 +50,7 @@ pub fn match_expression(attributes: &mut Attributes) -> AstNode {
 
     attributes.max_expr_depth += 1;
     children.push(Node::Terminal(TerminalInfo {
-        tabs: tabs,
+        tabs: tabs_end,
         token: "end".to_string(),
         new_lines: 1,
     }));
@@ -71,5 +79,10 @@ fn match_arm(attributes: &mut Attributes) -> AstNode {
 }
 
 fn destructuring_expression(attributes: &mut Attributes) -> AstNode {
-    literal(attributes)
+    attributes.match_arm_expr = true;
+    attributes.match_expr_valid = false;
+    let matcher = expression(attributes);
+    attributes.match_expr_valid = true;
+    attributes.match_arm_expr = false;
+    matcher
 }

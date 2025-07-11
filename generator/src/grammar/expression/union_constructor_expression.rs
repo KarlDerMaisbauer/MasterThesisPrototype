@@ -60,8 +60,10 @@ pub fn union_constructor_expression(attributes: &mut Attributes) -> AstNode {
     }));
     if member_type.clone() != "Nothing".to_string() {
         attributes.type_context.push(member_type.clone());
+        attributes.match_expr_valid = false;
         children.push(expression(attributes));
         attributes.type_context.pop();
+        attributes.match_expr_valid = true;
     }
 
     // if members.len() > 0 {

@@ -12,7 +12,9 @@ pub fn infix_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
     let depth = attributes.max_expr_depth;
     let no_zero_value = attributes.no_zero_value;
+    let matcher = attributes.match_arm_expr;
     !no_zero_value
+        && !matcher
         && depth > 0
         && (return_type == "Int" || return_type == "Float" || return_type == "Bool")
 }
@@ -25,6 +27,7 @@ pub fn infix_expression(attributes: &mut Attributes) -> AstNode {
     attributes.is_end_expression = false;
     let let_save = attributes.let_expr_allowed;
     attributes.let_expr_allowed = false;
+    attributes.match_expr_valid = false;
     attributes.type_context.push(context.clone());
     children.push(expression(attributes));
     attributes.type_context.pop();
@@ -35,6 +38,7 @@ pub fn infix_expression(attributes: &mut Attributes) -> AstNode {
     attributes.max_expr_depth -= 1;
     attributes.type_context.push(context);
     children.push(expression(attributes));
+    attributes.match_expr_valid = true;
     attributes.no_zero_value = false;
     attributes.type_context.pop();
     attributes.max_expr_depth += 1;

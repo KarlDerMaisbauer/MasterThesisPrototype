@@ -49,6 +49,7 @@ pub fn struct_constructor_expression(attributes: &mut Attributes) -> AstNode {
         let is_end_save = attributes.is_end_expression;
         attributes.is_end_expression = false;
         let mut iter = members.iter().peekable();
+        attributes.match_expr_valid = false;
         while let Some(member_type) = iter.next() {
             attributes.type_context.push(member_type.clone());
             children.push(expression(attributes));
@@ -61,6 +62,7 @@ pub fn struct_constructor_expression(attributes: &mut Attributes) -> AstNode {
                 }));
             }
         }
+        attributes.match_expr_valid = true;
         attributes.is_end_expression = is_end_save;
     }
     children.push(Node::Terminal(TerminalInfo {

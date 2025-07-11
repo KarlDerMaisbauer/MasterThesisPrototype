@@ -18,7 +18,18 @@ pub fn expression(attributes: &mut Attributes) -> AstNode {
 fn choose_expression(expressions: &Vec<(Expression, f64)>) -> Expression {
     let (expr, weights): (Vec<Expression>, Vec<f64>) = expressions.clone().into_iter().unzip();
     let weights_normalized: Vec<f64> = weights.iter().map(|w| (1f64 / w)).collect();
-    let dist = WeightedIndex::new(weights_normalized).ok().unwrap();
+    // let dist = WeightedIndex::new(weights_normalized).ok().unwrap();
+    let dist = match WeightedIndex::new(weights_normalized) {
+        // Ok(val) => match val {
+        //     Some(d) => d,
+        //     None => panic!("none returned for dist"),
+        // },
+        Ok(val) => val,
+        Err(e) => {
+            println!("An error occurred: {}", e);
+            panic!("Operation failed");
+        }
+    };
     let mut rng = rand::rng();
     let index = dist.sample(&mut rng);
     expr[index]

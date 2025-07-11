@@ -8,7 +8,10 @@ use crate::grammar::nodes::TerminalInfo;
 pub fn bracket_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
     let depth = attributes.max_expr_depth;
-    depth > 0 && (return_type == "Int" || return_type == "Float" || return_type == "Bool")
+    let matcher = attributes.match_arm_expr;
+    !matcher
+        && depth > 0
+        && (return_type == "Int" || return_type == "Float" || return_type == "Bool")
 }
 
 pub fn bracket_expression(attributes: &mut Attributes) -> AstNode {
@@ -27,7 +30,9 @@ pub fn bracket_expression(attributes: &mut Attributes) -> AstNode {
     attributes.is_end_expression = false;
     let let_save = attributes.let_expr_allowed;
     attributes.let_expr_allowed = false;
+    attributes.match_expr_valid = false;
     children.push(expression(attributes));
+    attributes.match_expr_valid = true;
     children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
         token: ")".to_string(),

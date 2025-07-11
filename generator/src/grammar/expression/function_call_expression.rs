@@ -10,7 +10,9 @@ use crate::grammar::nodes::TerminalInfo;
 pub fn function_call_expression_guard(attributes: &Attributes) -> bool {
     let return_type = attributes.type_context.last().unwrap();
     let no_zero_value = attributes.no_zero_value;
+    let matcher = attributes.match_arm_expr;
     !no_zero_value
+        && !matcher
         && attributes
             .function_map
             .iter()
@@ -49,6 +51,7 @@ pub fn function_call_expression(attributes: &mut Attributes) -> AstNode {
     }));
 
     let mut param_iter = (*f_params).iter().peekable();
+    attributes.match_expr_valid = false;
     while let Some((_param_name, param_type)) = param_iter.next() {
         attributes.type_context.push(param_type.clone());
         children.push(expression(attributes));
@@ -61,6 +64,7 @@ pub fn function_call_expression(attributes: &mut Attributes) -> AstNode {
             }));
         }
     }
+    attributes.match_expr_valid = true;
 
     children.push(Node::Terminal(TerminalInfo {
         tabs: 0,
