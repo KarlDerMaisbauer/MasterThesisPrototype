@@ -22,13 +22,13 @@ pub fn var_call_expression_guard(attributes: &Attributes) -> bool {
 pub fn var_call_expression(attributes: &mut Attributes) -> AstNode {
     let return_type = attributes.type_context.last().unwrap();
     let mut rng = rand::rng();
-    let mut possible_vars =
+    let mut possible_vars: Vec<String> =
         attributes
             .current_params
             .iter()
             .fold(vec![], |mut possible, (k, v)| {
                 if v == return_type {
-                    possible.push(k);
+                    possible.push(k.clone());
                 }
                 possible
             });
@@ -37,10 +37,11 @@ pub fn var_call_expression(attributes: &mut Attributes) -> AstNode {
         .iter()
         .fold(possible_vars, |mut possible, (k, v)| {
             if v == return_type {
-                possible.push(k);
+                possible.push(k.clone());
             }
             possible
         });
+    possible_vars.append(&mut attributes.get_valid_mach_vars(return_type));
     let var = possible_vars.choose(&mut rng).unwrap().to_string();
     let tabs = if attributes.is_start_expression {
         attributes.tab_level

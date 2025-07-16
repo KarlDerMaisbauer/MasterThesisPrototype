@@ -7,6 +7,7 @@ pub fn gen_type(attributes: &Attributes) -> String {
         "Int".to_string(),
         "Float".to_string(),
         "Bool".to_string(),
+        "String".to_string(),
         "Nothing".to_string(),
     ];
 

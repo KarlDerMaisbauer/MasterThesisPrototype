@@ -29,6 +29,9 @@ pub struct Attributes {
     pub no_zero_value: bool,
     pub match_expr_valid: bool,
     pub match_arm_expr: bool,
+    pub in_match_expr: bool,
+    pub match_expr_vars: Vec<VarMap>,
+    pub first_match_let: bool,
 }
 
 impl Attributes {
@@ -47,6 +50,21 @@ impl Attributes {
             .map(|(k, _)| k.clone())
             .collect()
     }
+
+    pub fn get_valid_mach_vars(&self, var_type: &str) -> Vec<String> {
+        self.match_expr_vars
+            .iter()
+            .fold(vec![], |mut acc: Vec<String>, map| {
+                acc.append(&mut map.iter().filter(|(_k, v)| *v == var_type).fold(
+                    vec![],
+                    |mut acc: Vec<String>, (k, _v)| {
+                        acc.push(k.clone());
+                        acc
+                    },
+                ));
+                acc
+            })
+    }
 }
 
 impl Default for Attributes {
@@ -57,7 +75,7 @@ impl Default for Attributes {
             function_id: 0,
             union_map: UnionMap::new(),
             struct_map: StructMap::new(),
-            function_map: FunctionMap::new(),
+            function_map: standard_lib(),
             type_context: Vec::new(),
             is_start_expression: false,
             is_end_expression: false,
@@ -72,6 +90,73 @@ impl Default for Attributes {
             no_zero_value: false,
             match_expr_valid: true,
             match_arm_expr: false,
+            in_match_expr: false,
+            match_expr_vars: Vec::new(),
+            first_match_let: true,
         }
     }
+}
+
+fn standard_lib() -> FunctionMap {
+    let mut map = FunctionMap::new();
+    map.insert(
+        "sin".to_string(),
+        (
+            vec![("a".to_string(), "Float".to_string())],
+            "Float".to_string(),
+        ),
+    );
+    map.insert(
+        "arcsin".to_string(),
+        (
+            vec![("a".to_string(), "Float".to_string())],
+            "Float".to_string(),
+        ),
+    );
+    map.insert(
+        "cos".to_string(),
+        (
+            vec![("a".to_string(), "Float".to_string())],
+            "Float".to_string(),
+        ),
+    );
+    map.insert(
+        "arccos".to_string(),
+        (
+            vec![("a".to_string(), "Float".to_string())],
+            "Float".to_string(),
+        ),
+    );
+    map.insert(
+        "tan".to_string(),
+        (
+            vec![("a".to_string(), "Float".to_string())],
+            "Float".to_string(),
+        ),
+    );
+    map.insert(
+        "arctan".to_string(),
+        (
+            vec![("a".to_string(), "Float".to_string())],
+            "Float".to_string(),
+        ),
+    );
+    map.insert(
+        "bool_to_int".to_string(),
+        (
+            vec![("a".to_string(), "Bool".to_string())],
+            "Int".to_string(),
+        ),
+    );
+    map.insert(
+        "concat".to_string(),
+        (
+            vec![
+                ("a".to_string(), "String".to_string()),
+                ("b".to_string(), "String".to_string()),
+            ],
+            "String".to_string(),
+        ),
+    );
+    map
 }

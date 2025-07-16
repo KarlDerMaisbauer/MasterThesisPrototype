@@ -32,10 +32,13 @@ pub fn literal(attributes: &mut Attributes) -> AstNode {
             value_intermediate.to_string()
         }
         "Bool" => rng.random::<bool>().to_string(),
-        "String" => (rng.sample_iter(rand::distr::Alphanumeric))
-            .take(10)
-            .map(|v| v as char)
-            .collect::<String>(),
+        "String" => {
+            let num_chars = rng.random::<u64>() % 10;
+            (rng.sample_iter(rand::distr::Alphanumeric))
+                .take(num_chars.try_into().unwrap())
+                .map(|v| v as char)
+                .collect::<String>()
+        }
         _ => panic!("Invalid type for literal"),
     };
 

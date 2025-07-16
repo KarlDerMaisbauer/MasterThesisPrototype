@@ -12,7 +12,11 @@ pub fn let_expression_quard(attributes: &Attributes) -> bool {
 
 pub fn let_expression(attributes: &mut Attributes) -> AstNode {
     let mut children = vec![Node::Terminal(TerminalInfo {
-        tabs: attributes.tab_level,
+        tabs: if attributes.in_match_expr && attributes.first_match_let {
+            0
+        } else {
+            attributes.tab_level
+        },
         token: "let ".to_string(),
         new_lines: 0,
     })];
@@ -23,6 +27,9 @@ pub fn let_expression(attributes: &mut Attributes) -> AstNode {
         0,
     )
     .token;
+    if attributes.in_match_expr {
+        attributes.first_match_let = false;
+    }
     let var_name = format!("var{}", attributes.current_var_id);
     attributes.current_var_id += 1;
     attributes.type_context.push(var_type.clone());
@@ -42,8 +49,15 @@ pub fn let_expression(attributes: &mut Attributes) -> AstNode {
     attributes.max_expr_depth -= 1;
     children.push(expression(attributes));
     attributes.max_expr_depth += 1;
-
-    attributes.current_vars.insert(var_name.clone(), var_type);
+    if attributes.in_match_expr {
+        attributes
+            .match_expr_vars
+            .last_mut()
+            .unwrap()
+            .insert(var_name.clone(), var_type);
+    } else {
+        attributes.current_vars.insert(var_name.clone(), var_type);
+    }
     attributes.type_context.pop();
     attributes.is_start_expression = true;
     attributes.is_end_expression = true;
