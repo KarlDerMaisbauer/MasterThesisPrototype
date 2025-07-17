@@ -16,6 +16,7 @@ pub fn struct_constructor_expression_guard(attributes: &Attributes) -> bool {
 }
 
 pub fn struct_constructor_expression(attributes: &mut Attributes) -> AstNode {
+    // attributes.max_expr_depth -= 1;
     let struct_type = attributes.type_context.last().unwrap();
     let new_lines = if attributes.is_end_expression { 1 } else { 0 };
     let tabs = if attributes.is_start_expression {
@@ -70,5 +71,6 @@ pub fn struct_constructor_expression(attributes: &mut Attributes) -> AstNode {
         token: ")".to_string(),
         new_lines: new_lines,
     }));
+    // attributes.max_expr_depth += 1;
     Node::NonTerminal(NonTerminalInfo { children })
 }

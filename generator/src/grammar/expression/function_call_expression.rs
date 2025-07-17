@@ -13,6 +13,7 @@ pub fn function_call_expression_guard(attributes: &Attributes) -> bool {
     let matcher = attributes.match_arm_expr;
     !no_zero_value
         && !matcher
+        && attributes.max_expr_depth > 0
         && attributes
             .function_map
             .iter()
@@ -37,6 +38,7 @@ pub fn function_call_expression(attributes: &mut Attributes) -> AstNode {
     attributes.is_start_expression = false;
     attributes.is_end_expression = false;
     attributes.let_expr_allowed = false;
+    attributes.max_expr_depth -= 1;
     let (f_name, f_params) = available_functions.choose(&mut rand::rng()).unwrap();
     children.push(Node::Terminal(TerminalInfo {
         tabs: tabs,
@@ -72,5 +74,6 @@ pub fn function_call_expression(attributes: &mut Attributes) -> AstNode {
         new_lines: new_lines,
     }));
 
+    attributes.max_expr_depth += 1;
     Node::NonTerminal(NonTerminalInfo { children: children })
 }

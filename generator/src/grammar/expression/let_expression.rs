@@ -4,6 +4,7 @@ use crate::grammar::nodes::AstNode;
 use crate::grammar::nodes::Node;
 use crate::grammar::nodes::NonTerminalInfo;
 use crate::grammar::nodes::TerminalInfo;
+use crate::grammar::r#type::type_blacklisted::type_blacklisted;
 use crate::grammar::r#type::type_whitelisted::type_whitelisted;
 
 pub fn let_expression_quard(attributes: &Attributes) -> bool {
@@ -20,13 +21,7 @@ pub fn let_expression(attributes: &mut Attributes) -> AstNode {
         token: "let ".to_string(),
         new_lines: 0,
     })];
-    let var_type = type_whitelisted(
-        attributes,
-        vec!["Int".to_string(), "Float".to_string(), "Bool".to_string()],
-        0,
-        0,
-    )
-    .token;
+    let var_type = type_blacklisted(attributes, vec!["Nothing".to_string()], 0, 0).token;
     if attributes.in_match_expr {
         attributes.first_match_let = false;
     }

@@ -6,6 +6,8 @@ use crate::grammar::nodes::Node;
 use crate::grammar::nodes::NonTerminalInfo;
 use crate::grammar::nodes::TerminalInfo;
 use crate::grammar::utils::gen_type::gen_type::gen_type;
+use crate::grammar::utils::gen_type::gen_type_blacklisted::gen_type_blacklisted;
+use crate::grammar::utils::gen_type::gen_type_whitelisted::gen_type_whitelisted;
 
 pub fn match_expression_guard(attributes: &Attributes) -> bool {
     let depth = attributes.max_expr_depth;
@@ -26,7 +28,7 @@ pub fn match_expression(attributes: &mut Attributes) -> AstNode {
     attributes.let_expr_allowed = false;
     attributes.in_match_expr = true;
     // let destructuring_type = gen_type_whitelisted(attributes, vec!["Int".to_string()]);
-    let destructuring_type = gen_type(attributes);
+    let destructuring_type = gen_type_blacklisted(attributes, vec!["Nothing".to_string()]);
     let mut children = vec![Node::Terminal(TerminalInfo {
         tabs: tabs_start,
         token: "match ".to_string(),

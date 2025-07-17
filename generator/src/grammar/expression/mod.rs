@@ -31,21 +31,10 @@ type Expression = fn(&mut Attributes) -> AstNode;
 static EXPRESSIONS: LazyLock<Vec<(Acceptor, Expression, f64)>> = LazyLock::new(|| {
     vec![
         (literal_guard, literal, 1f64),
-        (infix_expression_guard, infix_expression, 2f64),
         (bracket_expression_guard, bracket_expression, 1f64),
         (prefix_expression_guard, prefix_expression, 1f64),
         (var_call_expression_guard, var_call_expression, 1f64),
-        (let_expression_quard, let_expression, 2f64),
-        (
-            struct_constructor_expression_guard,
-            struct_constructor_expression,
-            2f64,
-        ),
-        (
-            union_constructor_expression_guard,
-            union_constructor_expression,
-            2f64,
-        ),
+        (match_expression_guard, match_expression, 1f64),
         (
             function_call_expression_guard,
             function_call_expression,
@@ -56,6 +45,17 @@ static EXPRESSIONS: LazyLock<Vec<(Acceptor, Expression, f64)>> = LazyLock::new(|
             member_access_expression,
             1f64,
         ),
-        (match_expression_guard, match_expression, 1f64),
+        (let_expression_quard, let_expression, 2f64),
+        (infix_expression_guard, infix_expression, 2f64),
+        (
+            struct_constructor_expression_guard,
+            struct_constructor_expression,
+            2f64,
+        ),
+        (
+            union_constructor_expression_guard,
+            union_constructor_expression,
+            2f64,
+        ),
     ]
 });

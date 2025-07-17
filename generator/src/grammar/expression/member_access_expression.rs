@@ -13,6 +13,7 @@ pub fn member_access_expression_guard(attributes: &Attributes) -> bool {
     let matcher = attributes.match_arm_expr;
     !no_zero_value
         && !matcher
+        && attributes.max_expr_depth > 0
         && attributes
             .struct_map
             .iter()
@@ -24,6 +25,7 @@ pub fn member_access_expression_guard(attributes: &Attributes) -> bool {
 }
 
 pub fn member_access_expression(attributes: &mut Attributes) -> AstNode {
+    attributes.max_expr_depth -= 1;
     let member_type = attributes.type_context.last().unwrap();
     // let struct_type: String = attributes
     //     .struct_map
@@ -80,10 +82,6 @@ pub fn member_access_expression(attributes: &mut Attributes) -> AstNode {
         token: member,
         new_lines: new_lines,
     }));
-
-    // attributes.is_start_expression = false;
-    // attributes.is_end_expression = false;
-    // attributes.let_expr_allowed = false;
-
+    attributes.max_expr_depth += 1;
     Node::NonTerminal(NonTerminalInfo { children })
 }

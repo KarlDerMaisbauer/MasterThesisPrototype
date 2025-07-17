@@ -15,6 +15,7 @@ pub fn bracket_expression_guard(attributes: &Attributes) -> bool {
 }
 
 pub fn bracket_expression(attributes: &mut Attributes) -> AstNode {
+    attributes.max_expr_depth -= 1;
     let tabs = if attributes.is_start_expression {
         attributes.tab_level
     } else {
@@ -40,6 +41,7 @@ pub fn bracket_expression(attributes: &mut Attributes) -> AstNode {
     }));
     attributes.let_expr_allowed = let_save;
 
+    attributes.max_expr_depth += 1;
     Node::NonTerminal(NonTerminalInfo {
         // tab_level: attributes.tab_level,
         children: children,
