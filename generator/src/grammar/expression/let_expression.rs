@@ -5,7 +5,6 @@ use crate::grammar::nodes::Node;
 use crate::grammar::nodes::NonTerminalInfo;
 use crate::grammar::nodes::TerminalInfo;
 use crate::grammar::r#type::type_blacklisted::type_blacklisted;
-use crate::grammar::r#type::type_whitelisted::type_whitelisted;
 
 pub fn let_expression_quard(attributes: &Attributes) -> bool {
     attributes.let_expr_allowed && attributes.max_expr_depth > 0

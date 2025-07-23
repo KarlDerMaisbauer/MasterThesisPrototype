@@ -1,7 +1,5 @@
 use crate::grammar::attributes::Attributes;
 use crate::grammar::nodes::AstNode;
-use rand::distr::Distribution;
-use rand::distr::weighted::WeightedIndex;
 use rand::seq::IndexedRandom;
 
 use crate::grammar::expression::EXPRESSIONS;
@@ -20,7 +18,7 @@ fn choose_expression(
     expressions: &Vec<(Expression, f64)>,
     attributes: &mut Attributes,
 ) -> Expression {
-    let (expr, weights): (Vec<Expression>, Vec<f64>) = expressions.clone().into_iter().unzip();
+    let (expr, _weights): (Vec<Expression>, Vec<f64>) = expressions.clone().into_iter().unzip();
     // let weights_normalized: Vec<f64> = weights.iter().map(|w| (1f64 / w)).collect();
     // // let dist = WeightedIndex::new(weights_normalized).ok().unwrap();
     // let dist = match WeightedIndex::new(weights_normalized) {

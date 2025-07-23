@@ -4,7 +4,6 @@ use crate::grammar::nodes::AstNode;
 use crate::grammar::nodes::Node;
 use crate::grammar::nodes::NonTerminalInfo;
 use crate::grammar::nodes::TerminalInfo;
-use crate::grammar::utils::gen_type::gen_type::gen_type;
 use crate::grammar::utils::gen_type::gen_type_blacklisted::gen_type_blacklisted;
 use crate::grammar::utils::gen_type::gen_type_whitelisted::gen_type_whitelisted;
 use rand::prelude::*;
