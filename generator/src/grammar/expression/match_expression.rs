@@ -1,4 +1,7 @@
+use std::fmt::format;
+
 use super::expression::expression;
+use crate::grammar::attributes;
 use crate::grammar::attributes::Attributes;
 use crate::grammar::attributes::VarMap;
 use crate::grammar::expression::Acceptor;
@@ -40,9 +43,7 @@ pub fn match_expression(attributes: &mut Attributes) -> AstNode {
         .map(|(k, v)| k.clone())
         .collect::<Vec<String>>();
     blacklist.push("Nothing".to_string());
-    println!("blacklist {:?}", blacklist);
     let destructuring_type = gen_type_blacklisted(attributes, blacklist);
-    println!("destructuring type {}", destructuring_type);
     let mut children = vec![Node::Terminal(TerminalInfo {
         tabs: tabs_start,
         token: "match ".to_string(),
@@ -119,14 +120,13 @@ fn destructuring_expression(attributes: &mut Attributes) -> AstNode {
     // ]
     let expressions: Vec<(Acceptor, Expression)> = vec![
         (literal_guard, literal),
-        // (capturing_expression_guard, capturing_expression),
+        (capturing_expression_guard, capturing_expression),
         (var_call_expression_guard, var_call_expression),
         (
             destructuring_union_expression_guard,
             destructuring_union_expression,
         ),
     ];
-    println!("match type context {:?}", attributes.type_context.last());
 
     let matcher = expressions
         .iter()
@@ -142,15 +142,31 @@ fn destructuring_expression(attributes: &mut Attributes) -> AstNode {
 }
 
 fn capturing_expression_guard(_attributes: &Attributes) -> bool {
-    false
+    true
 }
 
-fn capturing_expression(_attributes: &mut Attributes) -> AstNode {
-    Node::Terminal(TerminalInfo {
-        tabs: 0,
-        token: "ddd".to_string(),
+fn capturing_expression(attributes: &mut Attributes) -> AstNode {
+    let var_type = attributes.type_context.last().unwrap();
+    let var_name = format!("var{}", attributes.current_var_id);
+    let mut children: Vec<AstNode> = Vec::new();
+    attributes
+        .match_expr_vars
+        .last_mut()
+        .unwrap()
+        .insert(var_name.clone(), var_type.clone());
+    attributes.current_var_id += 1;
+    children.push(Node::Terminal(TerminalInfo {
+        tabs: attributes.tab_level,
+        token: "let ".to_string(),
         new_lines: 0,
-    })
+    }));
+    children.push(Node::Terminal(TerminalInfo {
+        tabs: 0,
+        token: var_name,
+        new_lines: 0,
+    }));
+
+    Node::NonTerminal(NonTerminalInfo { children })
 }
 
 fn destructuring_union_expression_guard(attributes: &Attributes) -> bool {

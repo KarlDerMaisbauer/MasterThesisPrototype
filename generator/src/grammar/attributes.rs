@@ -32,6 +32,7 @@ pub struct Attributes {
     pub in_match_expr: bool,
     pub match_expr_vars: Vec<VarMap>,
     pub first_match_let: bool,
+    pub union_base_type_member: bool,
 }
 
 impl Attributes {
@@ -93,6 +94,7 @@ impl Default for Attributes {
             in_match_expr: false,
             match_expr_vars: Vec::new(),
             first_match_let: true,
+            union_base_type_member: false,
         }
     }
 }

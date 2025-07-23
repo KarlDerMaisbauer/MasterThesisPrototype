@@ -2,6 +2,8 @@ use crate::grammar::attributes::Attributes;
 use crate::grammar::attributes::MemberMap;
 use crate::grammar::nodes::{AstNode, Node, TerminalInfo};
 use crate::grammar::r#type::r#type::r#type;
+use crate::grammar::r#type::type_blacklisted;
+use crate::grammar::r#type::type_blacklisted::type_blacklisted;
 use rand::Rng;
 
 pub fn union_members(attributes: &mut Attributes) -> (Vec<AstNode>, MemberMap) {
@@ -9,6 +11,7 @@ pub fn union_members(attributes: &mut Attributes) -> (Vec<AstNode>, MemberMap) {
     let mut members = MemberMap::new();
     let mut curr_members = union_members_inner(0, attributes, &mut members);
     let mut curr_member_id = 1;
+    attributes.union_base_type_member = false;
     while (rng.random::<u32>() % 3) != 0 {
         curr_members.append(&mut union_members_inner(
             curr_member_id,
@@ -26,7 +29,13 @@ fn union_members_inner(
     members: &mut MemberMap,
 ) -> Vec<AstNode> {
     let member_name = format!("member{}", member_id);
-    let member_type = r#type(attributes, 0, 0);
+    let blacklist = attributes
+        .struct_map
+        .iter()
+        .map(|(k, _v)| k.clone())
+        .collect::<Vec<String>>();
+
+    let member_type = type_blacklisted(attributes, blacklist, 0, 0);
     members.insert(member_name.clone(), member_type.token.clone());
 
     vec![
