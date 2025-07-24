@@ -25,6 +25,7 @@ pub fn infix_expression(attributes: &mut Attributes) -> AstNode {
     let (infix_node, context) = infix_operator(attributes);
     attributes.max_expr_depth -= 1;
     attributes.is_end_expression = false;
+    attributes.match_expr_valid = false;
     let let_save = attributes.let_expr_allowed;
     attributes.let_expr_allowed = false;
     attributes.match_expr_valid = false;
@@ -38,6 +39,7 @@ pub fn infix_expression(attributes: &mut Attributes) -> AstNode {
     attributes.max_expr_depth -= 1;
     attributes.type_context.push(context);
     children.push(expression(attributes));
+    attributes.match_expr_valid = true;
     attributes.match_expr_valid = true;
     attributes.no_zero_value = false;
     attributes.type_context.pop();

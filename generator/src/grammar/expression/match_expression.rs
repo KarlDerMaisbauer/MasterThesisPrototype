@@ -1,7 +1,4 @@
-use std::fmt::format;
-
 use super::expression::expression;
-use crate::grammar::attributes;
 use crate::grammar::attributes::Attributes;
 use crate::grammar::attributes::VarMap;
 use crate::grammar::expression::Acceptor;
@@ -15,16 +12,18 @@ use crate::grammar::nodes::Node;
 use crate::grammar::nodes::NonTerminalInfo;
 use crate::grammar::nodes::TerminalInfo;
 use crate::grammar::utils::gen_type::gen_type_blacklisted::gen_type_blacklisted;
+use rand::Rng;
 use rand::prelude::IndexedMutRandom;
 use rand::prelude::IndexedRandom;
 
 pub fn match_expression_guard(attributes: &Attributes) -> bool {
     let depth = attributes.max_expr_depth;
     let matcher = attributes.match_arm_expr;
-    !matcher && depth > 0 && attributes.match_expr_valid
+    !matcher && depth > 0 && attributes.match_expr_valid && !attributes.no_zero_value
 }
 
 pub fn match_expression(attributes: &mut Attributes) -> AstNode {
+    attributes.generic_match_arm_generated = false;
     let tabs_start = if attributes.is_start_expression {
         attributes.tab_level
     } else {
@@ -40,7 +39,7 @@ pub fn match_expression(attributes: &mut Attributes) -> AstNode {
     let mut blacklist = attributes
         .struct_map
         .iter()
-        .map(|(k, v)| k.clone())
+        .map(|(k, _v)| k.clone())
         .collect::<Vec<String>>();
     blacklist.push("Nothing".to_string());
     let destructuring_type = gen_type_blacklisted(attributes, blacklist);
@@ -59,9 +58,14 @@ pub fn match_expression(attributes: &mut Attributes) -> AstNode {
     attributes.tab_level += 1;
     // match arms
     attributes.max_expr_depth -= 1;
-    let mut num_match_arms = 5;
-    while num_match_arms > 0 {
-        num_match_arms -= 1;
+    attributes.match_arms = 0;
+    let mut rng = rand::rng();
+    while (rng.random::<u32>() % 3) != 0
+        || !attributes.generic_match_arm_generated
+        || attributes.match_arms <= 2
+    {
+        attributes.match_arms += 1;
+        println!("making arm nr {}", attributes.match_arms);
         attributes.type_context.push(destructuring_type.clone());
         children.push(match_arm(attributes));
     }
@@ -87,6 +91,8 @@ fn match_arm(attributes: &mut Attributes) -> AstNode {
     attributes.is_start_expression = true;
     attributes.is_end_expression = false;
     attributes.let_expr_allowed = false;
+    attributes.first_caturing_expression = true;
+    attributes.first_match_let = true;
     children.push(destructuring_expression(attributes));
     attributes.type_context.pop();
     children.push(Node::Terminal(TerminalInfo {
@@ -147,13 +153,19 @@ fn capturing_expression_guard(_attributes: &Attributes) -> bool {
 
 fn capturing_expression(attributes: &mut Attributes) -> AstNode {
     let var_type = attributes.type_context.last().unwrap();
-    let var_name = format!("var{}", attributes.current_var_id);
     let mut children: Vec<AstNode> = Vec::new();
-    attributes
-        .match_expr_vars
-        .last_mut()
-        .unwrap()
-        .insert(var_name.clone(), var_type.clone());
+    let ignore_var = rand::rng().random::<bool>();
+    let var_name = if ignore_var {
+        let name = format!("var{}", attributes.current_var_id);
+        attributes
+            .match_expr_vars
+            .last_mut()
+            .unwrap()
+            .insert(name.clone(), var_type.clone());
+        name
+    } else {
+        "_".to_string()
+    };
     attributes.current_var_id += 1;
     children.push(Node::Terminal(TerminalInfo {
         tabs: attributes.tab_level,
@@ -165,6 +177,9 @@ fn capturing_expression(attributes: &mut Attributes) -> AstNode {
         token: var_name,
         new_lines: 0,
     }));
+    if attributes.first_match_let {
+        attributes.generic_match_arm_generated = true;
+    }
 
     Node::NonTerminal(NonTerminalInfo { children })
 }
@@ -188,11 +203,17 @@ fn destructuring_union_expression(attributes: &mut Attributes) -> AstNode {
         0
     };
     attributes.is_start_expression = false;
+    let struct_types = attributes
+        .struct_map
+        .iter()
+        .map(|(type_name, _members)| type_name.clone())
+        .collect::<Vec<String>>();
     let (union_member_name, union_member_type): (String, String) = attributes
         .union_map
         .get(union_type)
         .unwrap()
         .iter()
+        .filter(|(_, data_type)| !struct_types.contains(data_type))
         .map(|(k, v)| (k.clone(), v.clone()))
         .collect::<Vec<(String, String)>>()
         .choose(&mut rand::rng())
@@ -219,6 +240,7 @@ fn destructuring_union_expression(attributes: &mut Attributes) -> AstNode {
         new_lines: 0,
     }));
     if union_member_type != "Nothing".to_string() {
+        attributes.first_caturing_expression = false;
         attributes.type_context.push(union_member_type);
         children.push(destructuring_expression(attributes));
         attributes.type_context.pop();

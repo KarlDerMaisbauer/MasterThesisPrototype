@@ -33,6 +33,9 @@ pub struct Attributes {
     pub match_expr_vars: Vec<VarMap>,
     pub first_match_let: bool,
     pub union_base_type_member: bool,
+    pub match_arms: usize,
+    pub first_caturing_expression: bool,
+    pub generic_match_arm_generated: bool,
 }
 
 impl Attributes {
@@ -95,6 +98,9 @@ impl Default for Attributes {
             match_expr_vars: Vec::new(),
             first_match_let: true,
             union_base_type_member: false,
+            match_arms: 0,
+            first_caturing_expression: true,
+            generic_match_arm_generated: false,
         }
     }
 }
