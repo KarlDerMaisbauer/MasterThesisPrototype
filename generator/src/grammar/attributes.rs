@@ -31,11 +31,12 @@ pub struct Attributes {
     pub match_arm_expr: bool,
     pub in_match_expr: bool,
     pub match_expr_vars: Vec<VarMap>,
-    pub first_match_let: bool,
+    pub first_match_let: Vec<bool>,
     pub union_base_type_member: bool,
-    pub match_arms: usize,
-    pub first_caturing_expression: bool,
-    pub generic_match_arm_generated: bool,
+    pub match_arms: Vec<usize>,
+    pub first_caturing_expression: Vec<bool>,
+    pub generic_match_arm_generated: Vec<bool>,
+    pub match_arm_union_used: bool,
 }
 
 impl Attributes {
@@ -96,11 +97,12 @@ impl Default for Attributes {
             match_arm_expr: false,
             in_match_expr: false,
             match_expr_vars: Vec::new(),
-            first_match_let: true,
+            first_match_let: Vec::new(),
             union_base_type_member: false,
-            match_arms: 0,
-            first_caturing_expression: true,
-            generic_match_arm_generated: false,
+            match_arms: Vec::new(),
+            first_caturing_expression: Vec::new(),
+            generic_match_arm_generated: Vec::new(),
+            match_arm_union_used: false,
         }
     }
 }

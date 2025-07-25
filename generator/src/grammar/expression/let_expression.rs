@@ -12,7 +12,7 @@ pub fn let_expression_quard(attributes: &Attributes) -> bool {
 
 pub fn let_expression(attributes: &mut Attributes) -> AstNode {
     let mut children = vec![Node::Terminal(TerminalInfo {
-        tabs: if attributes.in_match_expr && attributes.first_match_let {
+        tabs: if attributes.in_match_expr && *attributes.first_match_let.last().unwrap() {
             0
         } else {
             attributes.tab_level
@@ -22,7 +22,7 @@ pub fn let_expression(attributes: &mut Attributes) -> AstNode {
     })];
     let var_type = type_blacklisted(attributes, vec!["Nothing".to_string()], 0, 0).token;
     if attributes.in_match_expr {
-        attributes.first_match_let = false;
+        *attributes.first_match_let.last_mut().unwrap() = false;
     }
     let var_name = format!("var{}", attributes.current_var_id);
     attributes.current_var_id += 1;

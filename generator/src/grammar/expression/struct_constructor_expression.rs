@@ -52,6 +52,7 @@ pub fn struct_constructor_expression(attributes: &mut Attributes) -> AstNode {
         let mut iter = members.iter().peekable();
         attributes.match_expr_valid = false;
         while let Some(member_type) = iter.next() {
+            attributes.match_expr_valid = false;
             attributes.type_context.push(member_type.clone());
             children.push(expression(attributes));
             attributes.type_context.pop();

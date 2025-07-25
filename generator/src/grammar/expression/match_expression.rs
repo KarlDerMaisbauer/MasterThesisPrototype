@@ -23,7 +23,11 @@ pub fn match_expression_guard(attributes: &Attributes) -> bool {
 }
 
 pub fn match_expression(attributes: &mut Attributes) -> AstNode {
-    attributes.generic_match_arm_generated = false;
+    attributes.generic_match_arm_generated.push(false);
+    attributes.match_arms.push(0);
+    attributes.first_caturing_expression.push(true);
+    attributes.first_match_let.push(true);
+    attributes.in_match_expr = true;
     let tabs_start = if attributes.is_start_expression {
         attributes.tab_level
     } else {
@@ -34,7 +38,6 @@ pub fn match_expression(attributes: &mut Attributes) -> AstNode {
 
     attributes.match_expr_valid = false;
     attributes.let_expr_allowed = false;
-    attributes.in_match_expr = true;
     // let destructuring_type = gen_type_whitelisted(attributes, vec!["Int".to_string()]);
     let mut blacklist = attributes
         .struct_map
@@ -58,14 +61,15 @@ pub fn match_expression(attributes: &mut Attributes) -> AstNode {
     attributes.tab_level += 1;
     // match arms
     attributes.max_expr_depth -= 1;
-    attributes.match_arms = 0;
+    *attributes.match_arms.last_mut().unwrap() = 0;
     let mut rng = rand::rng();
-    while (rng.random::<u32>() % 3) != 0
-        || !attributes.generic_match_arm_generated
-        || attributes.match_arms <= 2
+    while (rng.random::<u32>() % 2) != 0
+        || !attributes.generic_match_arm_generated.last().unwrap()
+        || *attributes.match_arms.last().unwrap() <= 2
     {
-        attributes.match_arms += 1;
-        println!("making arm nr {}", attributes.match_arms);
+        *attributes.first_match_let.last_mut().unwrap() = true;
+        attributes.in_match_expr = true;
+        *attributes.match_arms.last_mut().unwrap() += 1;
         attributes.type_context.push(destructuring_type.clone());
         children.push(match_arm(attributes));
     }
@@ -80,6 +84,11 @@ pub fn match_expression(attributes: &mut Attributes) -> AstNode {
 
     attributes.let_expr_allowed = true;
     attributes.match_expr_valid = true;
+    // attributes.in_match_expr = false;
+    attributes.generic_match_arm_generated.pop();
+    attributes.match_arms.pop();
+    attributes.first_caturing_expression.pop();
+    attributes.first_match_let.pop();
     attributes.in_match_expr = false;
     Node::NonTerminal(NonTerminalInfo { children: children })
 }
@@ -91,8 +100,8 @@ fn match_arm(attributes: &mut Attributes) -> AstNode {
     attributes.is_start_expression = true;
     attributes.is_end_expression = false;
     attributes.let_expr_allowed = false;
-    attributes.first_caturing_expression = true;
-    attributes.first_match_let = true;
+    *attributes.first_caturing_expression.last_mut().unwrap() = true;
+    attributes.match_arm_union_used = false;
     children.push(destructuring_expression(attributes));
     attributes.type_context.pop();
     children.push(Node::Terminal(TerminalInfo {
@@ -103,9 +112,11 @@ fn match_arm(attributes: &mut Attributes) -> AstNode {
     attributes.is_end_expression = true;
     attributes.is_start_expression = false;
     attributes.let_expr_allowed = true;
-    attributes.first_match_let = true;
+    *attributes.first_match_let.last_mut().unwrap() = true;
     attributes.tab_level += 1;
+    let generic_match_arm_save = *attributes.generic_match_arm_generated.last().unwrap();
     children.push(expression(attributes));
+    *attributes.generic_match_arm_generated.last_mut().unwrap() = generic_match_arm_save;
     attributes.tab_level -= 1;
     attributes.match_expr_vars.pop();
     attributes.let_expr_allowed = let_expr_save;
@@ -167,8 +178,13 @@ fn capturing_expression(attributes: &mut Attributes) -> AstNode {
         "_".to_string()
     };
     attributes.current_var_id += 1;
+    let tabs = if attributes.match_arm_union_used {
+        0
+    } else {
+        attributes.tab_level
+    };
     children.push(Node::Terminal(TerminalInfo {
-        tabs: attributes.tab_level,
+        tabs,
         token: "let ".to_string(),
         new_lines: 0,
     }));
@@ -177,8 +193,8 @@ fn capturing_expression(attributes: &mut Attributes) -> AstNode {
         token: var_name,
         new_lines: 0,
     }));
-    if attributes.first_match_let {
-        attributes.generic_match_arm_generated = true;
+    if *attributes.first_match_let.last().unwrap() {
+        *attributes.generic_match_arm_generated.last_mut().unwrap() = true;
     }
 
     Node::NonTerminal(NonTerminalInfo { children })
@@ -192,6 +208,7 @@ fn destructuring_union_expression_guard(attributes: &Attributes) -> bool {
         .map(|(k, _v)| k)
         .collect::<Vec<&String>>()
         .contains(&data_type)
+        && !attributes.match_arm_union_used
 }
 
 fn destructuring_union_expression(attributes: &mut Attributes) -> AstNode {
@@ -203,6 +220,7 @@ fn destructuring_union_expression(attributes: &mut Attributes) -> AstNode {
         0
     };
     attributes.is_start_expression = false;
+    attributes.match_arm_union_used = true;
     let struct_types = attributes
         .struct_map
         .iter()
@@ -240,7 +258,7 @@ fn destructuring_union_expression(attributes: &mut Attributes) -> AstNode {
         new_lines: 0,
     }));
     if union_member_type != "Nothing".to_string() {
-        attributes.first_caturing_expression = false;
+        *attributes.first_caturing_expression.last_mut().unwrap() = false;
         attributes.type_context.push(union_member_type);
         children.push(destructuring_expression(attributes));
         attributes.type_context.pop();
